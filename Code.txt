@@ -1,0 +1,140 @@
+create database covid19
+use covid19
+create table covid_death(Province varchar(50),
+						Country varchar(50),
+                        Latitude float,
+                        Longitude float,
+                        `Date` varchar(50),
+                        Confirmed int,
+                        Death int,
+                        Recovered int)
+
+load data infile 
+'D:\data_time_series_covid19.csv'
+into table covid_death
+fields terminated by','
+enclosed by "'"
+lines terminated by '\n'
+ignore 1 rows;
+
+set session sql_mode=''
+set sql_safe_updates =0
+select * from covid_death
+
+---Make_all_null_values_are_"0"
+update covid_death
+set covid_death.Confirmed =0 where covid_death.Confirmed is NULL
+
+---Make_all_null_values_are_"0"
+
+update covid_death
+set covid_death.Death = 0 where covid_death.Death is NULL
+
+update covid_death
+set covid_death.Recovered= 0 where covid_death.Recovered is NULL
+
+update covid_death
+set Province= 0 where Province is NULL
+
+update covid_death
+set Country= 0 where Country is NULL
+
+update covid_death
+set Latitude= 0 where Latitude is NULL
+
+update covid_death
+set Longitude= 0 where Longitude is NULL
+
+select * from covid_death;
+
+alter table covid_death
+add column New_date date
+update covid_death
+set New_date= str_to_date(Date, '%d-%m-%y') 
+
+alter table covid_death
+drop column Date
+
+---Select_first_10_rows
+
+select * from covid_death 
+
+---Check_total_No:_of_rows
+
+select Count(*) from covid_death
+
+---Check_total_distinct_months
+
+select count(distinct(month(new_date))) as  from covid_death
+
+---select min_date & max_date
+
+select min(new_date),max(new_date) from covid_death
+
+---Find the confirmed cases, total_death & recovered people as Month wise.
+
+select * from covid_death
+select (month(New_date)) as 'Month',confirmed,count(Death) as Total_Deaths,Recovered from covid_death group by (month(New_date))
+
+---Find_Min_Confimed_Daths_in a months
+select * from covid_death
+select min(death),month(New_date) from covid_death group by month(New_date)
+
+---Find_Max_Confimed_Daths_in a months
+select max(death),month(New_date) from covid_death group by month(New_date)
+
+---Find_Max_Recoveredin a months
+
+select max(recovered),month(New_date) from covid_death group by month(New_date)
+
+---Find Mean,`Mode` of Death, Recovered & Confirmed cases 'in' the distribution
+---1_Mean
+
+select Avg(Death),Avg(Recovered),Avg(Confirmed) from covid_death
+
+---Mode(Most_Frequently_occured_confirmed_cases_in_each)month)
+
+
+select Confirmed,Count(Confirmed) as repetitions ,Month(New_date) From Covid_Death where Confirmed is not null group by Month(New_date) order by repetitions desc
+
+---Find_Average_VARIANCE_&_STANDART DEVIATION_of_confirmed_cases month_wise
+
+select month(new_date) as month, avg(Confirmed) as average_cases, Stddev(Confirmed) as standard_deviation,variance(Confirmed) as variance from Covid_Death group by month(new_date)
+
+---Find_Average_VARIANCE_&_STANDART DEVIATION_of_Deaths month_wise
+
+select * from covid_death;
+select month(new_date) as month, avg(Death) as average_cases, Stddev(Death) as standard_deviation,variance(Death) as variance from Covid_Death group by month(new_date)
+
+---Find_Average_VARIANCE_&_STANDART DEVIATION_of_Recovered_cases month_wise
+
+select month(new_date) as month, avg(Recovered) as average_cases, Stddev(Recovered) as standard_deviation,variance(Recovered) as variance from Covid_Death group by month(new_date)
+
+---Which_month_in_india_reported_the_max_deaths_death cases(top 10)
+select Death,month(New_date) from covid_death  where province ='india' order by Death desc limit 10
+---Which_months_in_india_reported_the_max_ecovered_cases(Top 10)
+select recovered,month(New_date) from covid_death  where province ='india' order by recovered desc limit 10
+
+---What about average_of_each_case
+
+select * from covid_death
+select avg(confirmed),avg(Death),avg(Recovered) from covid_death
+
+---find_the_percentile_of each_cases(deaths_recovered_confirmed)_in_each_month_with_respect_to the respective Recovered, Total deaths & confirmed cases.
+
+---1.Confirmed
+
+select province,confirmed, percent_rank() over (order by confirmed ) as percentile from covid_death where confirmed is not null
+
+---2.Death
+Select Province,Death,percent_rank() over(order by death) from covid_death as prcentile where death is not null
+
+---3.Recovered
+select province,Recovered,percent_rank() over(order by recovered) from covid_death as prcentile where recovered is not null
+
+---Find the  percentiles_of_confirmed_case_with_respect_to_confirmed cases
+
+select province,Confirmed,month(new_date), percent_rank() over (order by confirmed) as percentile from covid_death
+
+
+ 
